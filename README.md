@@ -19,10 +19,10 @@ A macOS menu bar app that keeps your microphone "stuck" to your preferred input 
 
 ### From Release Build
 
-1. Download `StickyMic.app` from the releases
-2. Move it to `/Applications`
-3. Launch the app
-4. Click the microphone icon in the menu bar and select your preferred input device
+1. Download the latest DMG or ZIP from [Releases](../../releases)
+2. If using DMG: Open it and drag StickyMic to Applications
+3. If using ZIP: Extract and move `StickyMic.app` to `/Applications`
+4. Launch the app and click the microphone icon in the menu bar to select your preferred input device
 
 ### Building from Source
 
@@ -120,6 +120,31 @@ swift GenerateIcons.swift
 ```
 
 This creates PNG files in `StickyMic/Assets.xcassets/AppIcon.appiconset/`.
+
+### Creating a Release
+
+Releases are built automatically via GitHub Actions. There are two ways to create a release:
+
+**Option 1: Tag a version (recommended for stable releases)**
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers a build and creates a GitHub Release with the version number from the tag.
+
+**Option 2: Manual trigger (for test builds)**
+1. Go to the repository on GitHub
+2. Click **Actions** → **Build and Release**
+3. Click **Run workflow**
+4. Optionally enter a version (leave empty to use git SHA like `build-abc1234`)
+5. Click **Run workflow**
+
+Both methods produce:
+- `StickyMic-<version>.dmg` - Disk image with drag-to-Applications installer
+- `StickyMic-<version>.zip` - Compressed app bundle
+
+The build artifacts are attached to the GitHub Release and available for download.
 
 ## Usage
 
