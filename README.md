@@ -20,7 +20,7 @@ A macOS menu bar app that keeps your microphone "stuck" to your preferred input 
 1. Clone the repository:
    ```bash
    git clone git@github.com:brianegan/StickyMic.git
-   cd StickyMic/StickyMic
+   cd StickyMic
    ```
 
 2. Build the release version:
@@ -53,12 +53,11 @@ A macOS menu bar app that keeps your microphone "stuck" to your preferred input 
 
 **Option 1: Xcode**
 ```bash
-open StickyMic/StickyMic.xcodeproj
+open StickyMic.xcodeproj
 ```
 
 **Option 2: Command Line**
 ```bash
-cd StickyMic
 xcodebuild -project StickyMic.xcodeproj \
            -scheme StickyMic \
            -configuration Debug \
@@ -77,7 +76,6 @@ Or press `Cmd+R` in Xcode.
 ### Project Structure
 
 ```
-StickyMic/
 ├── StickyMic.xcodeproj/           # Xcode project file
 ├── StickyMic/
 │   ├── StickyMicApp.swift         # App entry point, menu bar setup
@@ -106,7 +104,6 @@ StickyMic/
 If you modify `AppIconGenerator.swift` and want to regenerate the app icons:
 
 ```bash
-cd StickyMic
 swift GenerateIcons.swift
 ```
 
