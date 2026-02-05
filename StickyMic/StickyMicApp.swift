@@ -21,6 +21,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Track if this is a relaunch to show icon temporarily
     private var showIconTemporarily = false
 
+    /// Track known device UIDs to detect new device connections
+    private var knownDeviceUIDs: Set<String> = []
+
+    /// Track recently added devices (within a short time window)
+    private var recentlyAddedDeviceUIDs: Set<String> = []
+
+    /// Work item for clearing recently added devices
+    private var clearRecentDevicesWorkItem: DispatchWorkItem?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Generate app icon on first launch
         generateAppIconIfNeeded()
@@ -29,6 +38,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if preferences.hideMenuBarIcon {
             showIconTemporarily = true
         }
+
+        // Initialize known devices before setting up monitoring
+        knownDeviceUIDs = Set(audioDeviceManager.getInputDevices().map { $0.uid })
 
         setupStatusItem()
         setupAudioMonitoring()
@@ -84,12 +96,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         audioDeviceMonitor.onDefaultInputChanged = { [weak self] newDeviceID in
             guard let self = self else { return }
 
-            // If we have a preferred device and it's different from the new default, switch back
+            // Get the UID of the new default device
+            let currentDevices = self.audioDeviceManager.getInputDevices()
+            let newDeviceUID = currentDevices.first(where: { $0.id == newDeviceID })?.uid
+
+            // Only switch back if:
+            // 1. We have a preferred device set
+            // 2. The new device is different from our preferred device
+            // 3. The new device was RECENTLY ADDED (not a manual user selection)
             if let preferredUID = self.preferences.preferredDeviceUID,
-               let preferredDevice = self.audioDeviceManager.getInputDevices().first(where: { $0.uid == preferredUID }),
-               preferredDevice.id != newDeviceID {
-                // Check if preferred device is still available
-                if self.audioDeviceManager.getInputDevices().contains(where: { $0.uid == preferredUID }) {
+               let newUID = newDeviceUID,
+               newUID != preferredUID,
+               self.recentlyAddedDeviceUIDs.contains(newUID) {
+                // A newly connected device took over - switch back to preferred
+                if let preferredDevice = currentDevices.first(where: { $0.uid == preferredUID }) {
                     self.audioDeviceManager.setDefaultInputDevice(preferredDevice.id)
                 }
             }
@@ -100,8 +120,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         audioDeviceMonitor.onDevicesChanged = { [weak self] in
+            guard let self = self else { return }
+
+            // Get current device UIDs
+            let currentDeviceUIDs = Set(self.audioDeviceManager.getInputDevices().map { $0.uid })
+
+            // Find newly added devices
+            let addedDevices = currentDeviceUIDs.subtracting(self.knownDeviceUIDs)
+
+            if !addedDevices.isEmpty {
+                // Track recently added devices
+                self.recentlyAddedDeviceUIDs.formUnion(addedDevices)
+
+                // Clear the recently added devices after a short delay
+                // This window allows us to detect automatic switches vs manual ones
+                self.clearRecentDevicesWorkItem?.cancel()
+                let workItem = DispatchWorkItem { [weak self] in
+                    self?.recentlyAddedDeviceUIDs.removeAll()
+                }
+                self.clearRecentDevicesWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: workItem)
+            }
+
+            // Update known devices
+            self.knownDeviceUIDs = currentDeviceUIDs
+
             DispatchQueue.main.async {
-                self?.updateMenu()
+                self.updateMenu()
             }
         }
 
