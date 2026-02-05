@@ -19,8 +19,8 @@ A macOS menu bar app that keeps your microphone "stuck" to your preferred input 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/sticky-mic.git
-   cd sticky-mic/StickyMic
+   git clone git@github.com:brianegan/StickyMic.git
+   cd StickyMic/StickyMic
    ```
 
 2. Build the release version:
